@@ -422,7 +422,7 @@
         <a href="#">Home</a>
         <a href="#guide" class="active">Food Pass</a>
         <a href="#guide">Categories</a>
-        <a href="#guide">Map</a>
+        <a class="map-link" href="https://map.naver.com/p/search/경주월드" target="_blank" rel="noopener noreferrer">Map</a>
       </nav>
     </div>
   </header>
@@ -527,7 +527,7 @@
       <div class="foot-links">
         <a href="#">Privacy Policy</a>
         <a href="#">Terms of Service</a>
-        <a href="#">Park Map</a>
+        <a class="map-link" href="https://map.naver.com/p/search/경주월드" target="_blank" rel="noopener noreferrer">Park Map</a>
         <a href="#">Contact</a>
       </div>
       <span class="foot-copy">© 2026 Jiun-Jeong. All rights reserved.</span>
@@ -641,7 +641,7 @@
 
     // 지도 링크 폴백 (카카오톡 등 인앱 브라우저에서 새 창 차단 시 현재 화면 이동)
     document.addEventListener("click", function (e) {
-      const link = e.target.closest && e.target.closest("a.map-btn");
+      const link = e.target.closest && e.target.closest("a.map-btn, a.map-link");
       if (!link) return;
       const url = link.getAttribute("href");
       if (!url) return;
