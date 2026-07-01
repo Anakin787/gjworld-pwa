@@ -1,49 +1,49 @@
-// 경주월드 먹거리 가이드 - Service Worker
-const CACHE = "gyeongju-food-v7";
-const ASSETS = [
+/* 동해 여름 여행 PWA service worker */
+const CACHE = "donghae-v1";
+const SHELL = [
   "./",
   "./index.html",
-  "./manifest.webmanifest",
+  "./manifest.json",
   "./icon-192.png",
   "./icon-512.png",
-  "./icon-maskable-192.png",
-  "./icon-maskable-512.png"
+  "./icon-180.png",
+  "https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css",
+  "https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js",
+  "https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.css"
 ];
 
-// 설치: 앱 셸 캐싱
-self.addEventListener("install", (event) => {
-  event.waitUntil(
-    caches.open(CACHE).then((cache) => cache.addAll(ASSETS)).then(() => self.skipWaiting())
+// 설치: 앱 셸 미리 캐시 (일부 CDN 실패해도 설치는 진행)
+self.addEventListener("install", e => {
+  e.waitUntil(
+    caches.open(CACHE)
+      .then(c => Promise.allSettled(SHELL.map(u => c.add(u))))
+      .then(() => self.skipWaiting())
   );
 });
 
 // 활성화: 옛 캐시 정리
-self.addEventListener("activate", (event) => {
-  event.waitUntil(
+self.addEventListener("activate", e => {
+  e.waitUntil(
     caches.keys()
-      .then((keys) => Promise.all(keys.filter((k) => k !== CACHE).map((k) => caches.delete(k))))
+      .then(keys => Promise.all(keys.filter(k => k !== CACHE).map(k => caches.delete(k))))
       .then(() => self.clients.claim())
   );
 });
 
-// fetch: 같은 출처는 캐시 우선(없으면 네트워크 후 캐싱), 외부(네이버지도 등)는 그냥 네트워크
-self.addEventListener("fetch", (event) => {
-  const req = event.request;
+// 요청: 캐시 우선 + 백그라운드 갱신 (지도 타일·사진은 한 번 보면 오프라인에서도 표시)
+self.addEventListener("fetch", e => {
+  const req = e.request;
   if (req.method !== "GET") return;
-
-  const url = new URL(req.url);
-  if (url.origin !== self.location.origin) return; // 외부 링크는 SW가 건드리지 않음
-
-  event.respondWith(
-    caches.match(req).then((cached) => {
-      if (cached) return cached;
-      return fetch(req)
-        .then((res) => {
+  e.respondWith(
+    caches.match(req).then(cached => {
+      const network = fetch(req).then(res => {
+        if (res && (res.ok || res.type === "opaque")) {
           const copy = res.clone();
-          caches.open(CACHE).then((cache) => cache.put(req, copy)).catch(() => {});
-          return res;
-        })
-        .catch(() => caches.match("./index.html"));
+          caches.open(CACHE).then(c => c.put(req, copy));
+        }
+        return res;
+      }).catch(() => cached);
+      return cached || network;
     })
   );
 });
